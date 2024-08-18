@@ -1,23 +1,26 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from 'react';
+import MoodSelector from './components/MoodSelector';
+import ParameterControls from './components/ParameterControls';
+import MusicPlayer from './components/MusicPlayer';
+import GenerateButton from './components/GenerateButton';
 
 function App() {
+  const [mood, setMood] = useState('');
+  const [parameters, setParameters] = useState({});
+  const [generatedMusic, setGeneratedMusic] = useState(null);
+
+  const generateMusic = async () => {
+    // Call AI API here
+    // Update generatedMusic state
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-4">AI Music Generator</h1>
+      <MoodSelector setMood={setMood} />
+      <ParameterControls setParameters={setParameters} />
+      <GenerateButton onClick={generateMusic} />
+      {generatedMusic && <MusicPlayer music={generatedMusic} />}
     </div>
   );
 }
