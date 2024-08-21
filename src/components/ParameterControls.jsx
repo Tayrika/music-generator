@@ -1,6 +1,6 @@
 import React from 'react';
 
-function ParameterControls({ parameters, setParameters }) {
+function ParameterControls({ parameters = {}, setParameters }) {
   const handleChange = (e) => {
     setParameters({ ...parameters, [e.target.name]: e.target.value });
   };

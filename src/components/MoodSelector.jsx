@@ -1,12 +1,6 @@
 import React from 'react';
 
-const moods = [
-  { emoji: '😊', name: 'Happy' },
-  { emoji: '😢', name: 'Sad' },
-  { emoji: '😎', name: 'Chill' },
-  { emoji: '💪', name: 'Energetic' },
-  { emoji: '😌', name: 'Relaxed' }
-];
+const moods = ['😊 Happy', '😢 Sad', '😎 Chill', '💪 Energetic', '😌 Relaxed'];
 
 function MoodSelector({ setMood }) {
   return (
