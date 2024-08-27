@@ -17,67 +17,85 @@ function App() {
   const [recorder, setRecorder] = useState(null);
 
   useEffect(() => {
-    // Initialize Magenta and Tone.js
-    const run = async () => {
-      await mm.Player.tone.context.suspend();
-      setSynth(new Tone.Synth().toDestination());
-      setRecorder(new Tone.Recorder());
+    const initializeAudio = async () => {
+      try {
+        // Start audio context
+        await Tone.start();
+        console.log('Tone.js initialized');
+
+        // Initialize Magenta
+        await mm.Player.tone.context.resume();
+        console.log('Magenta initialized');
+
+        // Initialize synth and recorder
+        setSynth(new Tone.Synth().toDestination());
+        setRecorder(new Tone.Recorder());
+
+      } catch (error) {
+        console.error('Error initializing audio:', error);
+      }
     };
-    run();
+
+    initializeAudio();
   }, []);
   
 
   const generateMusic = async () => {
     if (!currentMood) {
-      alert("Please select a mood first.")
+      alert("Please select a mood first.");
       return;
     }
-
+  
     setIsGenerating(true);
-
-    // Call API 
-    // Initialize the MusicRNN model
-    const model = new mm.MusicRNN('https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/basic_rnn');
-    await model.initialize();
-
-    // Create a seed sequence based on the current mood
-    const seed = {
-      notes: [
-        { pitch: Tone.Frequency(currentMood.scale[0]).toMidi(), startTime: 0.0, endTime: 0.5},
-        { pitch: Tone.Frequency(currentMood.scale[2]).toMidi(), startTime: 0.5, endTime: 1.0 },
-      ],
-      totalTime: 1
-    };
-
-    // Generate a continuation of the seed sequence
-    const result = await model.continueSequence(seed, 16, parameters.tempo / 60);
-
-    // Set up audio recording
-    await recorder.start();
-
-    const now = Tone.now()
-
-    // Play and record the generated notes
-    result.notes.forEach(note => {
-      synth.triggerAttackRelease(
-        Tone.Frequency(note.pitch, "midi").toFrequency(),
-        note.endTime - note.startTime,
-        note.startTime + now
-      );
-    });
-
-    // Wait for the melody to finish playing
-    await Tone.getContext().rawContext.suspend(now + result.totalTime);
-
-    // Stop recording and get the audio buffer
-    const recordedBuffer = await recorder.stop();
-
-    // Convert a audio buffer to a Blob URL
-    const url = URL.createObjectURL(recordedBuffer);
-    setGeneratedMusic(url);
-
-    setIsGenerating(false);
-
+  
+    try {
+      // Initialize the MusicRNN model
+      const model = new mm.MusicRNN('https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/basic_rnn');
+      await model.initialize();
+  
+      // Create a seed sequence based on the current mood
+      const seed = {
+        notes: [
+          { pitch: Tone.Frequency(currentMood.scale[0]).toMidi(), startTime: 0.0, endTime: 0.5},
+          { pitch: Tone.Frequency(currentMood.scale[2]).toMidi(), startTime: 0.5, endTime: 1.0 },
+        ],
+        totalTime: 1
+      };
+  
+      // Generate a continuation of the seed sequence
+      const result = await model.continueSequence(seed, 16, parameters.tempo / 60);
+  
+      // Start recording
+      await recorder.start();
+  
+      const now = Tone.now();
+  
+      // Play the generated notes
+      result.notes.forEach(note => {
+        synth.triggerAttackRelease(
+          Tone.Frequency(note.pitch, "midi").toFrequency(),
+          note.endTime - note.startTime,
+          note.startTime + now
+        );
+      });
+  
+      // Wait for the melody to finish playing
+      await new Promise(resolve => setTimeout(resolve, result.totalTime * 1000));
+  
+      // Stop recording and get the audio buffer
+      const recordedBuffer = await recorder.stop();
+  
+      // Convert audio buffer to a Blob URL
+      const blob = new Blob([recordedBuffer], { type: 'audio/wav' });
+      const url = URL.createObjectURL(blob);
+      setGeneratedMusic(url);
+  
+    } catch (error) {
+      console.error('Error generating music:', error);
+      alert('An error occurred while generating music. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
